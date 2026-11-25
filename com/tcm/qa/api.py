@@ -44,18 +44,30 @@ def ask(body: AskIn):
 
 @router.post("/ocr")
 def recognize(file: UploadFile = File(...)):
-    """上传图片，返回识别出的文字（不直接提问，由用户确认后填入输入框）。
+    """上传图片，自动判断：有文字则提取文字，无文字则识别主体生成问题。
 
-    响应：{"code":0, "data":{"text": "...", "empty": false}}
+    响应：{"code":0, "data":{"mode","text","subject","kind","question","input"}}
+    input 为应填入输入框的内容（文字或自动生成的问题）。
+    不直接提问，由用户确认/修改后再点提问。
     """
     try:
         data = file.file.read()
-        text = ocr.extract_text(data)
-        return {"code": 0, "data": {"text": text, "empty": not bool(text)}}
+        r = ocr.understand(data)
+        return {
+            "code": 0,
+            "data": {
+                "mode": r["mode"],
+                "text": r["text"],
+                "subject": r["subject"],
+                "kind": r["kind"],
+                "question": r["question"],
+                "input": r["text"] if r["mode"] == "text" else r["question"],
+            },
+        }
     except ocr.OCRError as e:
         return {"code": 1, "msg": str(e)}
     except Exception as e:
-        return {"code": 1, "msg": f"OCR 处理失败：{e}"}
+        return {"code": 1, "msg": f"图片识别失败：{e}"}
 
 
 @router.get("/logs")

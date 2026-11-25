@@ -12,7 +12,7 @@
 | 分类列表 | `/list/?type=herb` | 按 `type` 浏览：herb 药材 / formula 方剂 / diet 食疗 / meridian 经络 / constitution 体质 / classic 古籍 / doctor 名医 / story 故事 |
 | 内容详情 | `/detail/?id=ginseng` | 性味归经、功效主治、方解等富文本详情 |
 | 发展历程 | `/history/` | 中医药发展史纵向时间轴（6 个纪元） |
-| 智能问答 | `/qa/` | RAG 流式问答，回答带引用溯源，可从主页/详情页带问题跳转（`/qa/?q=...`）；支持上传图片提取文字后提问 |
+| 智能问答 | `/qa/` | RAG 流式问答，回答带引用溯源，可从主页/详情页带问题跳转（`/qa/?q=...`）；支持上传图片，自动提取文字或识别药材后提问 |
 | 登录页 | `/admin/login.html` | 账号登录（RBAC 分权） |
 | 注册页 | `/admin/register.html` | 自助注册：仅创建普通用户（role 3），注册成功自动登录跳前台 |
 | 知识管理后台 | `/admin/` | 语料上传 → 审核 → 向量化 → 问答生效，含用户/角色/菜单/字典/日志管理 |
@@ -53,7 +53,7 @@ uv sync          # 或 pip install -r requirements.txt
 cp .env.example .env      # Windows: copy .env.example .env
 ```
 
-编辑 `.env`，至少填写 `DEEPSEEK_API_KEY`、`DB_PASSWORD`。图片识文功能还需 `DASHSCOPE_API_KEY`（阿里云百炼，视觉模型 `qwen3-vl-plus`）；不填不影响文字问答。
+编辑 `.env`，至少填写 `DEEPSEEK_API_KEY`、`DB_PASSWORD`。识图提问功能还需 `DASHSCOPE_API_KEY`（阿里云百炼，视觉模型 `qwen3-vl-plus`）；不填不影响文字问答。
 
 **3. 准备 MySQL 数据库**
 
@@ -127,7 +127,7 @@ uv run uvicorn com.tcm.main:app --port 8000 --reload
 后端   FastAPI（同步路由 + SSE StreamingResponse 流式问答）
 RAG    bge 本地向量模型(CPU) + Chroma 向量检索 + BM25(jieba+术语词典) 关键词检索 → RRF 混合排序
 问答   意图识别（术语词典快路径 + 规则 + LLM 兜底）→ LangGraph 三节点图（classify → retrieve → generate），DeepSeek 流式生成，带 [n] 引用标注与 0.5 相似度拒答阈值；非中医药问题在检索前直接拦截
-图片   OCR（阿里云 qwen3-vl-plus 视觉模型）提取图片文字 → 填入输入框，用户确认后走问答链路
+识图   qwen3-vl-plus 视觉模型一次调用返回「文字 + 主体」JSON：图片有文字则提取文字，无文字则识别药材/方剂并自动生成问题 → 填入输入框（可修改）后走问答链路
 数据   MySQL（knowledge / sys_* / qa_log / oper_log 等）+ Chroma 持久化
 权限   Token + RBAC（sys_user.role_id），后台接口统一守卫
 ```

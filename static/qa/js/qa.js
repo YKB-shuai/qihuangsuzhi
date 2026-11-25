@@ -26,14 +26,21 @@ document.addEventListener('DOMContentLoaded', () => {
       fetch('/api/qa/ocr', { method: 'POST', body: fd })
         .then(r => r.json())
         .then(d => {
-          if (d.code === 0 && d.data.text) {
-            qInput.value = d.data.text;
+          if (d.code !== 0) {
+            ocrHint.textContent = d.msg || '识别失败，请重试。';
+            return;
+          }
+          const v = d.data;
+          if (v.mode === 'text' && v.input) {
+            qInput.value = v.input;
             qInput.focus();
             ocrHint.textContent = '已提取图片文字，可修改后点击提问。';
-          } else if (d.code === 0) {
-            ocrHint.textContent = '图片中没有识别到文字，请换一张试试。';
+          } else if (v.mode === 'subject' && v.input) {
+            qInput.value = v.input;
+            qInput.focus();
+            ocrHint.textContent = '识别为「' + v.subject + '」并生成问题，识别可能有误，请核对后提问。';
           } else {
-            ocrHint.textContent = d.msg || '识别失败，请重试。';
+            ocrHint.textContent = '未识别到文字或药材，请换一张清晰的图片试试。';
           }
         })
         .catch(e => { ocrHint.textContent = '识别失败：' + e.message; })
