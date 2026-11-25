@@ -12,12 +12,12 @@ import json
 # ⚠️ 同 graph.py：先加载 torch，避免 Windows 上 DLL 冲突段错误
 import torch  # noqa: F401
 
-from fastapi import APIRouter
+from fastapi import APIRouter, File, UploadFile
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
 from com.tcm.db.conn import query_all
-from com.tcm.qa import graph
+from com.tcm.qa import graph, ocr
 
 router = APIRouter(prefix="/api/qa", tags=["qa"])
 
@@ -40,6 +40,22 @@ def ask(body: AskIn):
             yield "data: " + json.dumps({"type": "error", "data": str(e)}, ensure_ascii=False) + "\n\n"
 
     return StreamingResponse(gen(), media_type="text/event-stream")
+
+
+@router.post("/ocr")
+def recognize(file: UploadFile = File(...)):
+    """上传图片，返回识别出的文字（不直接提问，由用户确认后填入输入框）。
+
+    响应：{"code":0, "data":{"text": "...", "empty": false}}
+    """
+    try:
+        data = file.file.read()
+        text = ocr.extract_text(data)
+        return {"code": 0, "data": {"text": text, "empty": not bool(text)}}
+    except ocr.OCRError as e:
+        return {"code": 1, "msg": str(e)}
+    except Exception as e:
+        return {"code": 1, "msg": f"OCR 处理失败：{e}"}
 
 
 @router.get("/logs")

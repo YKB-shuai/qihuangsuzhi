@@ -10,6 +10,37 @@ document.addEventListener('DOMContentLoaded', () => {
   btn.onclick = ask;
   qInput.addEventListener('keydown', e => { if (e.key === 'Enter') ask(); });
 
+  // 图片识文：上传图片 → OCR 提取文字 → 填入输入框（可编辑后再提问）
+  const imgBtn = document.getElementById('imgBtn');
+  const imgFile = document.getElementById('imgFile');
+  const ocrHint = document.getElementById('ocrHint');
+  if (imgBtn && imgFile) {
+    imgBtn.addEventListener('click', () => imgFile.click());
+    imgFile.addEventListener('change', () => {
+      const file = imgFile.files[0];
+      if (!file) return;
+      imgBtn.disabled = true;
+      ocrHint.textContent = '正在识别图片文字…';
+      const fd = new FormData();
+      fd.append('file', file);
+      fetch('/api/qa/ocr', { method: 'POST', body: fd })
+        .then(r => r.json())
+        .then(d => {
+          if (d.code === 0 && d.data.text) {
+            qInput.value = d.data.text;
+            qInput.focus();
+            ocrHint.textContent = '已提取图片文字，可修改后点击提问。';
+          } else if (d.code === 0) {
+            ocrHint.textContent = '图片中没有识别到文字，请换一张试试。';
+          } else {
+            ocrHint.textContent = d.msg || '识别失败，请重试。';
+          }
+        })
+        .catch(e => { ocrHint.textContent = '识别失败：' + e.message; })
+        .finally(() => { imgBtn.disabled = false; imgFile.value = ''; });
+    });
+  }
+
   // 快捷问题：点击直接发问
   document.querySelectorAll('.suggestion').forEach(b => {
     b.addEventListener('click', () => {

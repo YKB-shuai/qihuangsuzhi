@@ -181,10 +181,16 @@
     <div class="card-body" id="chat"></div>
     <div class="card-footer bg-white">
       <div class="input-group">
-        <input id="q" class="form-control" placeholder="例如：治痞块用什么方？" maxlength="200">
+        <button id="imgBtn" class="btn btn-outline-secondary" type="button" title="上传图片提取文字"
+          style="border-radius:8px 0 0 8px;border-color:var(--hairline);color:var(--ink-2);font-size:13px;white-space:nowrap;">
+          图片识文
+        </button>
+        <input id="q" class="form-control" placeholder="输入问题，或上传方剂/药材图片提取文字" maxlength="1000"
+          style="border-left:0;">
         <button id="btn" class="btn btn-primary px-4">提问</button>
+        <input type="file" id="imgFile" accept="image/png,image/jpeg,image/webp" hidden>
       </div>
-      <div class="form-text mt-1">回答由 AI 依据知识库生成，用药请遵医嘱。</div>
+      <div class="form-text mt-1" id="ocrHint">回答由 AI 依据知识库生成，用药请遵医嘱。</div>
     </div>
   </div>
 </main>

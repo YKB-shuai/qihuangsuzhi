@@ -35,5 +35,10 @@ class Settings:
     DEEPSEEK_BASE_URL: str = os.getenv("DEEPSEEK_BASE_URL", "https://api.deepseek.com")
     DEEPSEEK_MODEL_CHAT: str = os.getenv("DEEPSEEK_MODEL_CHAT", "deepseek-chat")
 
+    # ---- 阿里云百炼（图片 OCR）----
+    DASHSCOPE_API_KEY: str = os.getenv("DASHSCOPE_API_KEY", "")
+    DASHSCOPE_BASE_URL: str = os.getenv(
+        "DASHSCOPE_BASE_URL", "https://dashscope.aliyuncs.com/compatible-mode/v1")
+
 
 settings = Settings()
