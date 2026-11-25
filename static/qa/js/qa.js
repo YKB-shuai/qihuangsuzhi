@@ -4,13 +4,15 @@ const qInput = document.getElementById('q');
 const btn = document.getElementById('btn');
 let srcModal = null;
 let currentSources = [];   // 本轮引用片段
+let pendingImage = null;   // 用户上传、待随问题一起发送的图片 data URL
 
 document.addEventListener('DOMContentLoaded', () => {
   srcModal = new bootstrap.Modal('#srcModal');
   btn.onclick = ask;
   qInput.addEventListener('keydown', e => { if (e.key === 'Enter') ask(); });
 
-  // 图片识文：上传图片 → OCR 提取文字 → 填入输入框（可编辑后再提问）
+  // 识图提问：上传图片后不自动填问题，而是把图片暂存，
+  // 让用户输入自己的问题（如"这张图是什么药材"），提问时图片与问题一起发送。
   const imgBtn = document.getElementById('imgBtn');
   const imgFile = document.getElementById('imgFile');
   const ocrHint = document.getElementById('ocrHint');
@@ -19,36 +21,16 @@ document.addEventListener('DOMContentLoaded', () => {
     imgFile.addEventListener('change', () => {
       const file = imgFile.files[0];
       if (!file) return;
-      imgBtn.disabled = true;
-      ocrHint.textContent = '正在识别图片文字…';
-      const fd = new FormData();
-      fd.append('file', file);
-      fetch('/api/qa/ocr', { method: 'POST', body: fd })
-        .then(r => r.json())
-        .then(d => {
-          if (d.code !== 0) {
-            ocrHint.textContent = d.msg || '识别失败，请重试。';
-            return;
-          }
-          const v = d.data;
-          if (v.mode === 'text' && v.input) {
-            qInput.value = v.input;
-            qInput.focus();
-            ocrHint.textContent = '已提取图片文字，可修改后点击提问。';
-          } else if (v.mode === 'subject' && v.input) {
-            qInput.value = v.input;
-            qInput.focus();
-            ocrHint.textContent = '识别为「' + v.subject + '」并生成问题，识别可能有误，请核对后提问。';
-          } else if (v.mode === 'query_no_subject' && v.input) {
-            qInput.value = v.input;
-            qInput.focus();
-            ocrHint.textContent = '图中未识别出明确药材，请把问题补充得更具体（如药材名或功效）。';
-          } else {
-            ocrHint.textContent = '未识别到文字或药材，请换一张清晰的图片试试。';
-          }
-        })
-        .catch(e => { ocrHint.textContent = '识别失败：' + e.message; })
-        .finally(() => { imgBtn.disabled = false; imgFile.value = ''; });
+      const reader = new FileReader();
+      reader.onload = () => {
+        pendingImage = reader.result;   // data:image/...;base64,...
+        showImagePreview(pendingImage);
+        ocrHint.innerHTML = '已附上图片，请输入你的问题（例如：这张图是什么药材？），再点提问。';
+        qInput.focus();
+      };
+      reader.onerror = () => { ocrHint.textContent = '图片读取失败，请重试。'; };
+      reader.readAsDataURL(file);
+      imgFile.value = '';
     });
   }
 
@@ -69,6 +51,29 @@ document.addEventListener('DOMContentLoaded', () => {
     greet();
   }
 });
+
+/** 在输入框上方显示待发送的图片缩略图（可点 × 移除） */
+function showImagePreview(dataUrl) {
+  clearImagePreview();
+  const wrap = document.createElement('div');
+  wrap.id = 'imgPreview';
+  wrap.className = 'img-preview';
+  wrap.innerHTML = '<img src="' + dataUrl + '" alt="待发送图片">' +
+    '<button type="button" title="移除图片" aria-label="移除图片">×</button>';
+  wrap.querySelector('button').onclick = () => {
+    pendingImage = null;
+    clearImagePreview();
+    const hint = document.getElementById('ocrHint');
+    if (hint) hint.textContent = '已移除图片。';
+  };
+  const inputGroup = document.querySelector('.card-footer .input-group');
+  if (inputGroup) inputGroup.parentNode.insertBefore(wrap, inputGroup);
+}
+
+function clearImagePreview() {
+  const old = document.getElementById('imgPreview');
+  if (old) old.remove();
+}
 
 function greet() {
   addMsg('bot', '你好，我是「岐黄溯智」问答助手。可以问我方剂、药材或古籍出处，例如：治痞块用什么方');
@@ -102,7 +107,17 @@ async function ask() {
   qInput.value = '';
   btn.disabled = true;
 
-  addMsg('user', question);
+  const sentImage = pendingImage;
+  const userDiv = addMsg('user', question);
+  if (sentImage) {
+    const thumb = document.createElement('img');
+    thumb.src = sentImage;
+    thumb.className = 'user-img';
+    thumb.alt = '附图';
+    userDiv.querySelector('.bubble').appendChild(thumb);
+  }
+  pendingImage = null;
+  clearImagePreview();
   // 机器人气泡：先显示「思考中」三点，收到首个 token 后切换为流式区
   const div = addMsg('bot', '');
   const bubble = div.querySelector('.bubble');
@@ -116,7 +131,7 @@ async function ask() {
     const resp = await fetch('/api/qa/ask', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ question }),
+      body: JSON.stringify({ question, image: sentImage || null }),
     });
     if (!resp.ok || !resp.body) throw new Error('服务不可用（HTTP ' + resp.status + '）');
 

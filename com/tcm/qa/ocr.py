@@ -84,6 +84,52 @@ def extract_text(data: bytes) -> str:
     return text
 
 
+# 图文问答提示词：结合图片与用户问题，输出图片内容描述供 RAG 检索
+DESCRIBE_PROMPT = (
+    "仔细观察这张图片，回答用户的问题。\n"
+    "用户问题：{question}\n\n"
+    "请输出一段简洁客观的图片内容描述，重点说明图中可见的药材、方剂、文字或物体，"
+    "以及它们与用户问题的关系。\n"
+    "要求：\n"
+    "- 只描述图中真实可见的内容，不要臆测看不清的细节；\n"
+    "- 如果图中是中药材，写出药材名称与可辨识特征；\n"
+    "- 如果图中有文字，原样摘录关键文字；\n"
+    "- 不要回答用户问题本身，只输出图片内容描述；\n"
+    "- 控制在 150 字以内。"
+)
+
+
+def describe_for_question(data: bytes, question: str) -> dict:
+    """结合用户问题理解图片。
+
+    返回 {"description": 图片描述, "name": 识别出的药材名或空字符串}。
+    name 用于让检索聚焦到具体药材，避免形态描述把向量带偏。
+    """
+    prompt = DESCRIBE_PROMPT.format(question=question[:200])
+    description = _call_vision(data, prompt, max_tokens=400)
+
+    # 二次轻量调用：只问药材名，要求 JSON，便于稳定提取
+    name_prompt = (
+        "这张图片里如果是一种中药材或中药饮片，只回答它的药材名称（2-6个字）；"
+        "如果不是药材或无法判断，只回答：无。不要任何解释。"
+    )
+    try:
+        raw = _call_vision(data, name_prompt, max_tokens=30)
+        name = raw.strip().strip("。．.  \n")
+        # 去掉模型爱加的包装
+        for junk in ("药材名称：", "药材：", "答案：", "是"):
+            if name.startswith(junk):
+                name = name[len(junk):].strip()
+        if name in ("无", "没有", "无法判断", "不是药材", "none", "None", ""):
+            name = ""
+        if len(name) > 8:  # 明显不是药材名
+            name = ""
+    except Exception:
+        name = ""
+
+    return {"description": description, "name": name}
+
+
 def _call_vision(data: bytes, prompt: str, max_tokens: int) -> str:
     """调用视觉模型，返回文本内容（extract_text 与 understand 共用）。"""
     if not settings.DASHSCOPE_API_KEY:

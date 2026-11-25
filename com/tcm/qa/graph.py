@@ -65,13 +65,23 @@ def build_llm() -> ChatDeepSeek:
     )
 
 
-def build_prompt(chunks: list[dict], question: str) -> str:
-    """把片段编成带编号的资料块，让模型能按 [n] 引用。"""
+def build_prompt(chunks: list[dict], question: str, image_name: str = "") -> str:
+    """把片段编成带编号的资料块，让模型能按 [n] 引用。
+
+    image_name: 附图识别出的药材名；有值时提示模型直接介绍该药材，
+    避免纠结"资料里没有图片描述"而答非所问。
+    """
     lines = [
         f"[{i}]（{c['source']} fid={c['fid']} {c['title']}·{c['seg']}）{c['text']}"
         for i, c in enumerate(chunks, 1)
     ]
-    return f"资料片段：\n" + "\n".join(lines) + f"\n\n问题：{question}"
+    prefix = ""
+    if image_name:
+        prefix = (
+            f"用户上传的图片已由图像识别确认为「{image_name}」。"
+            f"请直接依据资料介绍{image_name}的相关信息，不要讨论资料中是否含图片。\n\n"
+        )
+    return prefix + "资料片段：\n" + "\n".join(lines) + f"\n\n问题：{question}"
 
 
 def node_classify(state: QAState) -> dict:
@@ -124,51 +134,105 @@ def save_log(question: str, chunks: list[dict], answer: str, elapsed_ms: int) ->
     )
 
 
-def ask(question: str) -> dict:
+def ask(question: str, image_b64: str | None = None) -> dict:
     """非流式：跑一遍图，返回 {question, chunks, answer}。"""
     t0 = time.time()
+    q = question
+    img_bytes = _decode_image(image_b64)
+    if img_bytes:
+        try:
+            from com.tcm.qa import ocr
+            vis = ocr.describe_for_question(img_bytes, question)
+            name = vis.get("name", "")
+            desc = vis.get("description", "")
+            if name:
+                q = f"{name}是什么？请说明它的性味归经和功效主治。{question}"
+            elif desc:
+                q = f"用户问题：{question}\n图片内容：{desc}"
+        except Exception:
+            pass
     result = build_graph().invoke({
-        "question": question, "intent_ok": True, "chunks": [], "answer": "",
+        "question": q, "intent_ok": True, "chunks": [], "answer": "",
     })
     save_log(question, result["chunks"], result["answer"], int((time.time() - t0) * 1000))
     return result
 
 
-def iter_answer(question: str):
+def _decode_image(image_b64: str | None) -> bytes | None:
+    """把前端传来的 base64（支持 data URL）解码为图片字节。"""
+    if not image_b64:
+        return None
+    import base64
+
+    raw = image_b64
+    if "," in raw and raw.strip().startswith("data:"):
+        raw = raw.split(",", 1)[1]
+    try:
+        return base64.b64decode(raw)
+    except Exception:
+        return None
+
+
+def iter_answer(question: str, image_b64: str | None = None):
     """4.3 流式：先吐引用片段，再逐 token 吐回答。
 
     产出 ('sources', chunks) → 若干 ('token', 文本) → ('done', None)
     用同步 generator，配合 FastAPI 的 def 路由 + StreamingResponse。
+    附图时：先用视觉模型描述图片内容，拼进检索问题，让"这张图是什么药材"可回答。
     """
     t0 = time.time()
+    display_question = question          # 日志/前端展示用的原始问题
+    search_question = question           # 真正用于检索/生成的问题（含图片描述）
+    image_name = ""                      # 附图识别出的药材名
+
+    # 图片理解：把图中内容转成文字描述，拼进问题
+    img_bytes = _decode_image(image_b64)
+    if img_bytes:
+        try:
+            from com.tcm.qa import ocr
+            vis = ocr.describe_for_question(img_bytes, question)
+            name = vis.get("name", "")
+            desc = vis.get("description", "")
+            image_name = name
+            if name:
+                # 识别出明确药材名：以药名为核心检索，避免形态描述带偏向量
+                search_question = f"{name}是什么？请说明它的性味归经和功效主治。{question}"
+            elif desc:
+                search_question = f"用户问题：{question}\n图片内容：{desc}"
+        except Exception as e:
+            yield ("token", f"[图片识别失败：{e}]\n")
+            yield ("done", None)
+            save_log(question, [], f"图片识别失败:{e}", int((time.time() - t0) * 1000))
+            return
 
     # 意图识别前置：非中医药问题不检索、不调生成模型，直接拒答
-    if not intent.is_tcm_question(question):
+    # 用 search_question 判断（含图片描述），避免"这张图是什么药材"被误判
+    if not intent.is_tcm_question(search_question):
         yield ("out_of_scope", intent.OUT_OF_SCOPE)
         yield ("done", None)
-        save_log(question, [], intent.OUT_OF_SCOPE, int((time.time() - t0) * 1000))
+        save_log(display_question, [], intent.OUT_OF_SCOPE, int((time.time() - t0) * 1000))
         return
 
-    chunks = retriever.search(question, TOP_K)
+    chunks = retriever.search(search_question, TOP_K)
     yield ("sources", chunks)
 
     if not chunks or max(c["score"] for c in chunks) < MIN_SCORE:
         yield ("token", REFUSE)
         yield ("done", None)
-        save_log(question, chunks, REFUSE, int((time.time() - t0) * 1000))
+        save_log(display_question, chunks, REFUSE, int((time.time() - t0) * 1000))
         return
 
     buf = []
     for piece in build_llm().stream([
         SystemMessage(SYS_PROMPT),
-        HumanMessage(build_prompt(chunks, question)),
+        HumanMessage(build_prompt(chunks, search_question, image_name)),
     ]):
         if piece.content:
             buf.append(piece.content)
             yield ("token", piece.content)
 
     answer = "".join(buf)
-    save_log(question, chunks, answer, int((time.time() - t0) * 1000))
+    save_log(display_question, chunks, answer, int((time.time() - t0) * 1000))
     yield ("done", None)
 
 

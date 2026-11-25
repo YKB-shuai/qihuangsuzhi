@@ -24,6 +24,7 @@ router = APIRouter(prefix="/api/qa", tags=["qa"])
 
 class AskIn(BaseModel):
     question: str
+    image: str | None = None   # 可选：图片 base64（data URL 或纯 base64），随问题一起理解
 
 
 @router.post("/ask")
@@ -34,7 +35,7 @@ def ask(body: AskIn):
     """
     def gen():
         try:
-            for kind, payload in graph.iter_answer(body.question):
+            for kind, payload in graph.iter_answer(body.question, image_b64=body.image):
                 yield "data: " + json.dumps({"type": kind, "data": payload}, ensure_ascii=False) + "\n\n"
         except Exception as e:  # 流式里出错也要告诉前端，别让连接干挂着
             yield "data: " + json.dumps({"type": "error", "data": str(e)}, ensure_ascii=False) + "\n\n"
