@@ -1,0 +1,389 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>岐黄溯智 · 中医药知识平台</title>
+  <script>
+    if (!localStorage.getItem('tcm_token')) location.href = '/admin/login.html';
+  </script>
+  <!-- 品牌版本守卫：检测到旧缓存页自动刷新到新版 -->
+  <script>
+  (function(){
+    try {
+      if (sessionStorage.getItem('qh_vguard_ok') === '1') return;
+      var html = document.documentElement.innerHTML || '';
+      if (html.indexOf('东方草木') !== -1 || html.indexOf('ORIENTAL HERBS') !== -1) {
+        sessionStorage.setItem('qh_vguard_ok','1');
+        var u = new URL(location.href);
+        u.searchParams.set('_v', String(Date.now()));
+        location.replace(u.toString());
+      }
+    } catch(e){}
+  })();
+  </script>
+  <style>
+    :root{
+      --bg:#f7f4ee;        /* 暖中性：宣纸 */
+      --card:#fdfbf7;
+      --raised:#efe9df;
+      --hairline:rgba(31,27,22,.09);
+      --ink:#1f1b16;
+      --ink-2:#5e554a;
+      --ink-3:#7b7266;
+      --wood:#3a2a1d;      /* 深胡桃木：导航与页脚 */
+      --wood-2:#4a3828;
+      --accent:#a63d2f;    /* 朱砂：主行动与溯源标注 */
+      --accent-soft:rgba(166,61,47,.08);
+      --ease:cubic-bezier(0.22,1,0.36,1);
+    }
+    *{box-sizing:border-box;}
+    html{scroll-behavior:smooth;}
+    body{margin:0;background:var(--bg);color:var(--ink);
+      font-family:-apple-system,"PingFang SC","Microsoft YaHei","Songti SC","STSong",serif;
+      font-size:15px;line-height:1.55;-webkit-font-smoothing:antialiased;}
+    a{text-decoration:none;color:inherit;}
+    .wrap{max-width:1200px;margin:0 auto;padding:0 24px;}
+    section[id]{scroll-margin-top:80px;}
+
+    /* 导航：深木色实底，安静 */
+    .nav{position:fixed;top:0;left:0;right:0;z-index:1030;background:var(--wood);border-bottom:1px solid rgba(255,255,255,.1);}
+    .nav-inner{display:flex;align-items:center;gap:32px;height:60px;}
+    .brand{display:flex;align-items:center;gap:10px;color:#f4ede2;}
+    .brand .mark{width:28px;height:28px;border:1px solid rgba(244,237,226,.45);border-radius:6px;
+      display:flex;align-items:center;justify-content:center;flex:0 0 auto;
+      font-family:"Songti SC","STSong","SimSun",serif;font-size:15px;line-height:1;}
+    .brand .name{font-size:16px;font-weight:500;letter-spacing:1px;}
+    .menu{display:flex;gap:24px;margin-left:12px;}
+    .menu a{color:rgba(244,237,226,.75);font-size:14px;padding:18px 0;border-bottom:2px solid transparent;
+      transition:color .14s var(--ease),border-color .14s var(--ease);}
+    .menu a:hover,.menu a.active{color:#f4ede2;border-bottom-color:rgba(244,237,226,.5);}
+    .nav-right{margin-left:auto;display:flex;align-items:center;gap:12px;}
+    .btn-nav{padding:8px 14px;border-radius:8px;font-size:13px;font-weight:500;transition:background .14s var(--ease),border-color .14s var(--ease);}
+    .btn-nav.primary{background:#f4ede2;color:var(--wood);}
+    .btn-nav.primary:hover{background:#fff;}
+    .btn-nav.ghost{color:rgba(244,237,226,.8);border:1px solid rgba(244,237,226,.28);}
+    .btn-nav.ghost:hover{border-color:rgba(244,237,226,.6);color:#f4ede2;}
+
+    /* Hero：真实场景图 + 左留白放标题 */
+    .hero{position:relative;min-height:640px;display:flex;align-items:center;overflow:hidden;
+      background:#e9e2d6 url('/img/hero-bencao.webp') center center / cover no-repeat;}
+    .hero::after{content:"";position:absolute;inset:0;pointer-events:none;
+      background:linear-gradient(90deg,rgba(247,244,238,.97) 0%,rgba(247,244,238,.9) 30%,rgba(247,244,238,.25) 55%,transparent 75%),
+                 linear-gradient(0deg,var(--bg) 0%,transparent 22%);}
+    .hero-inner{position:relative;z-index:1;width:100%;padding:96px 0 120px;}
+    .hero-label{font-size:12px;letter-spacing:.06em;color:var(--ink-3);margin-bottom:20px;}
+    .hero h1{font-family:"Songti SC","STSong","SimSun",serif;font-size:56px;line-height:1.08;
+      font-weight:400;letter-spacing:-.01em;margin:0 0 20px;max-width:9em;color:var(--ink);}
+    .hero-sub{font-size:18px;line-height:1.6;color:var(--ink-2);max-width:30em;margin:0 0 32px;}
+    .hero-actions{display:flex;gap:12px;align-items:center;}
+    .btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;
+      height:44px;padding:0 20px;border-radius:8px;font-size:14px;font-weight:500;
+      transition:background .14s var(--ease),border-color .14s var(--ease),transform .1s var(--ease);}
+    .btn.primary{background:var(--accent);color:#fff;}
+    .btn.primary:hover{background:#8f3226;}
+    .btn.secondary{background:var(--card);color:var(--ink);border:1px solid var(--hairline);}
+    .btn.secondary:hover{border-color:rgba(31,27,22,.2);}
+    .btn:active{transform:scale(.98);}
+
+    /* 溯源样例：首页唯一的"内容高光"，朱砂细线签名 */
+    .trace{display:flex;align-items:stretch;gap:0;margin-top:56px;max-width:660px;
+      background:rgba(253,251,247,.94);border:1px solid var(--hairline);border-radius:12px;overflow:hidden;}
+    .trace-q{flex:0 0 40%;padding:16px 20px;border-right:1px solid var(--hairline);}
+    .trace-a{flex:1;padding:16px 20px;}
+    .trace-label{font-size:12px;color:var(--ink-3);margin-bottom:6px;}
+    .trace-q p{margin:0;font-size:14px;color:var(--ink);}
+    .trace-a p{margin:0 0 12px;font-size:14px;color:var(--ink-2);line-height:1.6;}
+    .trace-src{border-left:2px solid var(--accent);padding-left:10px;font-size:12px;color:var(--ink-3);}
+    .trace-src b{color:var(--accent);font-weight:500;}
+
+    /* 通用区块 */
+    section.block{padding:72px 0;}
+    .block-head{margin-bottom:32px;}
+    .kicker{font-size:12px;color:var(--ink-3);margin-bottom:8px;}
+    .block-title{font-size:30px;line-height:1.15;font-weight:500;letter-spacing:-.01em;margin:0 0 8px;
+      font-family:"Songti SC","STSong","SimSun",serif;}
+    .block-desc{color:var(--ink-2);font-size:14px;margin:0;max-width:44em;}
+
+    /* 分类矩阵：等 padding、hairline、hover 仅边框变化 */
+    .cat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;}
+    .cat-card{background:var(--card);border:1px solid var(--hairline);border-radius:12px;padding:20px 24px;
+      transition:border-color .14s var(--ease),background .14s var(--ease);}
+    .cat-card:hover{border-color:rgba(31,27,22,.22);background:#fff;}
+    .cat-card .top{display:flex;align-items:center;gap:12px;margin-bottom:10px;}
+    .cat-card .ico{width:32px;height:32px;display:flex;align-items:center;justify-content:center;
+      color:var(--ink-2);flex:0 0 auto;}
+    .cat-card h3{margin:0;font-size:15px;font-weight:500;}
+    .cat-card p{margin:0 0 12px;color:var(--ink-2);font-size:13px;line-height:1.6;}
+    .cat-card .more{font-size:12px;color:var(--ink-3);}
+
+    /* 药材小档案：编辑式列表，替代四张等宽卡 */
+    .herb-list{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;}
+    .herb-row{display:flex;align-items:center;gap:20px;background:var(--card);border:1px solid var(--hairline);
+      border-radius:12px;padding:16px 20px;transition:border-color .14s var(--ease);}
+    .herb-row:hover{border-color:rgba(31,27,22,.22);}
+    .herb-row .glyph{font-family:"Songti SC","STSong","SimSun",serif;font-size:36px;line-height:1;
+      color:var(--ink);flex:0 0 48px;text-align:center;}
+    .herb-row .info{flex:1;}
+    .herb-row h3{margin:0 0 4px;font-size:15px;font-weight:500;}
+    .herb-row p{margin:0;font-size:13px;color:var(--ink-2);}
+    .herb-row .arrow{color:var(--ink-3);font-size:14px;}
+
+    /* 问询导览：问题列表，不用胶囊 chip */
+    .ask{background:var(--raised);}
+    .ask-tip{color:var(--ink-2);font-size:13px;margin:0 0 20px;}
+    .questions{display:grid;grid-template-columns:repeat(2,1fr);gap:8px 24px;margin-bottom:28px;}
+    .questions a{display:flex;align-items:center;justify-content:space-between;padding:12px 0;
+      border-bottom:1px solid var(--hairline);font-size:14px;color:var(--ink);
+      transition:color .14s var(--ease),padding-left .14s var(--ease);}
+    .questions a:hover{color:var(--accent);padding-left:4px;}
+    .questions a span{color:var(--ink-3);font-size:12px;}
+
+    /* 问答入口 banner：安静的一行 */
+    .entry{background:var(--card);border:1px solid var(--hairline);border-radius:12px;
+      padding:24px 28px;display:flex;align-items:center;gap:24px;}
+    .entry h3{margin:0 0 4px;font-size:16px;font-weight:500;}
+    .entry p{margin:0;color:var(--ink-2);font-size:13px;flex:1;}
+
+    /* 页脚 */
+    .footer{background:var(--wood);color:rgba(244,237,226,.78);padding:48px 0 28px;}
+    .foot-grid{display:grid;grid-template-columns:1.6fr 1fr 1fr;gap:32px;}
+    .foot-brand .name{font-size:16px;font-weight:500;color:#f4ede2;margin-bottom:10px;}
+    .foot-brand p{font-size:13px;margin:0;max-width:30em;color:rgba(244,237,226,.6);}
+    .foot-col h4{font-size:13px;font-weight:500;color:#f4ede2;margin:0 0 12px;}
+    .foot-col a{display:block;font-size:13px;margin:8px 0;color:rgba(244,237,226,.65);transition:color .14s var(--ease);}
+    .foot-col a:hover{color:#f4ede2;}
+    .foot-bottom{border-top:1px solid rgba(244,237,226,.12);margin-top:32px;padding-top:18px;
+      font-size:12px;color:rgba(244,237,226,.5);}
+
+    @media(max-width:900px){
+      .menu{display:none;}
+      .hero h1{font-size:40px;}
+      .hero-sub{font-size:16px;}
+      .cat-grid{grid-template-columns:repeat(2,1fr);}
+      .foot-grid{grid-template-columns:1fr 1fr;}
+      .trace{flex-direction:column;}
+      .trace-q{border-right:none;border-bottom:1px solid var(--hairline);}
+    }
+    @media(max-width:560px){
+      .hero{min-height:560px;}
+      .hero h1{font-size:34px;}
+      .cat-grid,.herb-list,.questions,.foot-grid{grid-template-columns:1fr;}
+      .btn-nav.ghost{display:none;}
+      .entry{flex-direction:column;align-items:flex-start;}
+    }
+    /* 背景音乐：安静控制条，无渐变无光晕 */
+    .bgm{position:fixed;right:16px;bottom:16px;z-index:9999;display:flex;align-items:center;gap:10px;
+      background:var(--card);border:1px solid var(--hairline);border-radius:8px;padding:7px 12px 7px 7px;
+      box-shadow:0 1px 2px rgba(0,0,0,.05);font-family:inherit;}
+    .bgm-btn{width:32px;height:32px;border-radius:6px;border:none;background:var(--wood);color:#f4ede2;
+      display:flex;align-items:center;justify-content:center;cursor:pointer;flex:0 0 auto;}
+    .bgm-btn .ic-pause{display:none;}
+    .bgm-btn.playing .ic-play{display:none;}
+    .bgm-btn.playing .ic-pause{display:block;}
+    .bgm-name{font-size:12px;color:var(--ink-2);white-space:nowrap;}
+    .bgm-vol{-webkit-appearance:none;appearance:none;width:88px;height:3px;border-radius:2px;
+      background:var(--raised);outline:none;cursor:pointer;}
+    .bgm-vol::-webkit-slider-thumb{-webkit-appearance:none;width:12px;height:12px;border-radius:50%;
+      background:var(--accent);border:2px solid var(--card);cursor:pointer;}
+    .bgm-vol::-moz-range-thumb{width:12px;height:12px;border-radius:50%;background:var(--accent);
+      border:2px solid var(--card);cursor:pointer;}
+    @media(max-width:520px){.bgm-name{display:none;}.bgm-vol{width:64px;}}
+  </style>
+</head>
+<body id="top">
+
+<nav class="nav">
+  <div class="wrap nav-inner">
+    <a class="brand" href="#top">
+      <span class="mark">岐</span>
+      <span class="name">岐黄溯智</span>
+    </a>
+    <div class="menu">
+      <a href="#top" class="active">首页</a>
+      <a href="#explore">本草分类</a>
+      <a href="#ask">问询导览</a>
+      <a href="#herbs">明星药材</a>
+      <a href="/list/?type=doctor">名医</a>
+      <a href="/history/">医史</a>
+    </div>
+    <div class="nav-right">
+      <a class="btn-nav primary" href="/qa/">进入问答</a>
+      <a class="btn-nav ghost" href="/admin/" id="adminNavBtn">知识库管理</a>
+      <a class="btn-nav ghost" href="/admin/login.html" id="logoutBtn">退出登录</a>
+    </div>
+  </div>
+</nav>
+
+<header class="hero">
+  <div class="wrap hero-inner">
+    <div class="hero-label">中医药知识平台 · 知识库问答</div>
+    <h1>把古籍里的方剂，变成有出处的答案</h1>
+    <p class="hero-sub">收录三万七千余条方剂与本草知识。提问、溯源、按类查阅，均可查到原文依据。</p>
+    <div class="hero-actions">
+      <a class="btn primary" href="/qa/">开始提问</a>
+      <a class="btn secondary" href="#explore">浏览本草</a>
+    </div>
+    <div class="trace">
+      <div class="trace-q">
+        <div class="trace-label">提问</div>
+        <p>阿魏麝香散的处方是什么？</p>
+      </div>
+      <div class="trace-a">
+        <div class="trace-label">依据知识库作答</div>
+        <p>阿魏15克（酒煮）、麝香3克、雄黄9克、野水红花子120克，神曲（炒）、人参、白术（生）各30克，肉桂15克。</p>
+        <div class="trace-src"><b>[1]</b> 方剂 · 阿魏麝香散 · 处方　<span style="color:var(--ink-3)">查看原文 →</span></div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<section class="block" id="explore">
+  <div class="wrap">
+    <div class="block-head">
+      <div class="kicker">按类查阅</div>
+      <h2 class="block-title">本草分类</h2>
+      <p class="block-desc">从道地药材到著名医家，从古籍典籍到历史脉络，沿类目逐项查阅。</p>
+    </div>
+    <div class="cat-grid">
+      <a class="cat-card" href="/list/?type=formula"><div class="top"><span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h9a2 2 0 0 1 2 2v14H8a2 2 0 0 1-2-2z"/><path d="M6 3c-2 1-3 3-3 6s1 8 3 9"/><path d="M10 7h5M10 11h5"/></svg></span><h3>经典方剂</h3></div><p>经方与时方，君臣佐使配伍，按证遣方。</p><span class="more">共 12 类条目 →</span></a>
+      <a class="cat-card" href="/list/?type=herb"><div class="top"><span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21V8"/><path d="M12 12c-3-1-5-3-5-6 3 0 5 2 5 6z"/><path d="M12 14c3-1 5-3 5-6-3 0-5 2-5 6z"/></svg></span><h3>道地药材</h3></div><p>性味归经、功效禁忌，识本草方能善调理。</p><span class="more">共 8 类条目 →</span></a>
+      <a class="cat-card" href="/list/?type=diet"><div class="top"><span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 11h16a8 8 0 0 1-16 0z"/><path d="M9 11V7a3 3 0 0 1 6 0v4"/></svg></span><h3>辨证食疗</h3></div><p>药食同源，因时因人而食，四季养于餐桌。</p><span class="more">查看条目 →</span></a>
+      <a class="cat-card" href="/list/?type=meridian"><div class="top"><span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="5" r="2"/><circle cx="5" cy="13" r="2"/><circle cx="19" cy="13" r="2"/><circle cx="12" cy="20" r="2"/><path d="M12 7v3M7 13h10M12 13v5"/></svg></span><h3>经络穴位</h3></div><p>经络循行与穴位推拿、艾灸，外治以调内。</p><span class="more">查看条目 →</span></a>
+      <a class="cat-card" href="/list/?type=constitution"><div class="top"><span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4.5 20c0-4 3.6-6.5 7.5-6.5s7.5 2.5 7.5 6.5"/></svg></span><h3>体质辨识</h3></div><p>九种体质各有偏性，辨体而养事半功倍。</p><span class="more">查看条目 →</span></a>
+      <a class="cat-card" href="/list/?type=classic"><div class="top"><span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v14H6a2 2 0 0 1-2-2z"/><path d="M15 3v18"/><path d="M8 8h4M8 12h4"/></svg></span><h3>经典古籍</h3></div><p>《本草纲目》《伤寒论》等典籍的智慧传承。</p><span class="more">查看条目 →</span></a>
+      <a class="cat-card" href="/list/?type=doctor"><div class="top"><span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4.5 20c0-4 3.6-6.5 7.5-6.5s7.5 2.5 7.5 6.5"/></svg></span><h3>著名中医</h3></div><p>杏林先贤，读其生平与著述可知医道传承。</p><span class="more">查看条目 →</span></a>
+      <a class="cat-card" href="/list/?type=story"><div class="top"><span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v14H6a2 2 0 0 1-2-2z"/><path d="M15 3v18"/><path d="M8 8h4M8 12h4"/></svg></span><h3>历史故事</h3></div><p>神农尝百草、杏林春暖，一草一事皆藏文化记忆。</p><span class="more">查看条目 →</span></a>
+      <a class="cat-card" href="/history/"><div class="top"><span class="ico"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg></span><h3>发展历程</h3></div><p>从上古到当代，一条跨越数千年的传承脉络。</p><span class="more">查看时间轴 →</span></a>
+    </div>
+  </div>
+</section>
+
+<section class="block herb-grid" id="herbs" style="background:var(--raised)">
+  <div class="wrap">
+    <div class="block-head">
+      <div class="kicker">药材小档案</div>
+      <h2 class="block-title">四味常用药材</h2>
+      <p class="block-desc">性味归经与功效，取自知识库条目。点击查看详情。</p>
+    </div>
+    <div class="herb-list">
+      <a class="herb-row" href="/detail/?id=ginseng"><span class="glyph">参</span><span class="info"><h3>人参</h3><p>大补元气，复脉固脱，安神益智</p></span><span class="arrow">→</span></a>
+      <a class="herb-row" href="/detail/?id=danggui"><span class="glyph">归</span><span class="info"><h3>当归</h3><p>补血活血，调经止痛，润燥滑肠</p></span><span class="arrow">→</span></a>
+      <a class="herb-row" href="/detail/?id=gouqi"><span class="glyph">杞</span><span class="info"><h3>枸杞</h3><p>滋补肝肾，益精明目，久服轻身</p></span><span class="arrow">→</span></a>
+      <a class="herb-row" href="/detail/?id=chenpi"><span class="glyph">皮</span><span class="info"><h3>陈皮</h3><p>理气健脾，燥湿化痰，陈久者良</p></span><span class="arrow">→</span></a>
+    </div>
+  </div>
+</section>
+
+<section class="block ask" id="ask">
+  <div class="wrap">
+    <div class="block-head">
+      <div class="kicker">常见提问</div>
+      <h2 class="block-title">问询导览</h2>
+      <p class="block-desc">点选问题直接进入问答。回答依据知识库原文，可点击查看出处。</p>
+    </div>
+    <p class="ask-tip">以下内容仅作中医药文化科普，不能替代专业医师的诊断与治疗。</p>
+    <div class="questions">
+      <a href="/qa/?q=失眠睡不好，中医怎么调理">失眠多梦 <span>→</span></a>
+      <a href="/qa/?q=脾胃虚弱怎么食养">脾胃虚弱 <span>→</span></a>
+      <a href="/qa/?q=肩颈酸痛针灸或按摩哪个穴位好">肩颈酸痛 <span>→</span></a>
+      <a href="/qa/?q=体内湿气重怎么祛">湿气重 <span>→</span></a>
+      <a href="/qa/?q=痛经中医有什么调理方法">痛经 <span>→</span></a>
+      <a href="/qa/?q=感冒咳嗽初期中医怎么处理">感冒咳嗽 <span>→</span></a>
+      <a href="/qa/?q=经常上火是怎么回事">上火 <span>→</span></a>
+      <a href="/qa/?q=总觉得疲劳乏力中医怎么看">疲劳乏力 <span>→</span></a>
+    </div>
+    <div class="entry">
+      <div style="flex:1">
+        <h3>没有找到你的问题</h3>
+        <p>直接向智能助手提问，支持方剂、药材、食疗与文献溯源。</p>
+      </div>
+      <a class="btn primary" href="/qa/">进入问答</a>
+    </div>
+  </div>
+</section>
+
+<footer class="footer">
+  <div class="wrap foot-grid">
+    <div class="foot-brand">
+      <div class="name">岐黄溯智</div>
+      <p>中医药知识平台，收录方剂与本草知识，让每条回答都能回到原文。</p>
+    </div>
+    <div class="foot-col">
+      <h4>查阅</h4>
+      <a href="#explore">本草分类</a>
+      <a href="#ask">问询导览</a>
+      <a href="#herbs">明星药材</a>
+      <a href="/list/?type=doctor">著名中医</a>
+      <a href="/history/">发展历程</a>
+    </div>
+    <div class="foot-col">
+      <h4>工具</h4>
+      <a href="/qa/">智能问答</a>
+      <a href="/admin/" id="adminFootBtn">知识库管理</a>
+    </div>
+  </div>
+  <div class="wrap foot-bottom">
+    内容仅供中医药文化学习与科普参考，不能替代专业医师的诊断与治疗。如有不适，请及时就医。
+  </div>
+</footer>
+
+<script>
+  (function () {
+    var t = localStorage.getItem('tcm_token');
+    function hideAdmin() {
+      var n = document.getElementById('adminNavBtn'); if (n) n.style.display = 'none';
+      var f = document.getElementById('adminFootBtn'); if (f) f.style.display = 'none';
+    }
+    if (!t) { hideAdmin(); return; }
+    fetch('/api/sys/me', { headers: { 'X-Token': t } })
+      .then(function (r) { return r.json(); })
+      .then(function (d) {
+        if (!(d.code === 0 && (d.data.role === 1 || d.data.role === 2))) hideAdmin();
+      }).catch(hideAdmin);
+    var lo = document.getElementById('logoutBtn');
+    if (lo) lo.addEventListener('click', function (e) {
+      e.preventDefault();
+      localStorage.removeItem('tcm_token');
+      location.href = '/admin/login.html';
+    });
+  })();
+</script>
+
+<div class="bgm" id="bgm">
+  <button class="bgm-btn" id="bgmBtn" type="button" aria-label="播放背景音乐">
+    <svg class="ic-play" viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+    <svg class="ic-pause" viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><path d="M6 5h4v14H6zM14 5h4v14h-4z"/></svg>
+  </button>
+  <span class="bgm-name">古筝 · 高山流水</span>
+  <input class="bgm-vol" id="bgmVol" type="range" min="0" max="100" value="50" aria-label="音量">
+  <audio id="bgmAudio" loop preload="none" src="https://chinesemusicworld.com/mp3lib/Guzheng-High-Mountain-and-Running-River-gao-shan-liu-shui.mp3"></audio>
+</div>
+<script>
+(function(){
+  var KEY_VOL='bgm_vol', KEY_ON='bgm_on';
+  var audio=document.getElementById('bgmAudio');
+  var btn=document.getElementById('bgmBtn');
+  var vol=document.getElementById('bgmVol');
+  var v=parseFloat(localStorage.getItem(KEY_VOL));
+  if(isNaN(v)) v=0.5;
+  audio.volume=v; vol.value=Math.round(v*100);
+  function reflect(){ if(audio.paused){ btn.classList.remove('playing'); btn.setAttribute('aria-label','播放背景音乐'); } else { btn.classList.add('playing'); btn.setAttribute('aria-label','暂停背景音乐'); } }
+  function play(){ audio.play().then(function(){ localStorage.setItem(KEY_ON,'1'); reflect(); }).catch(function(){ localStorage.setItem(KEY_ON,'0'); reflect(); }); }
+  function pause(){ audio.pause(); localStorage.setItem(KEY_ON,'0'); reflect(); }
+  btn.addEventListener('click', function(e){ e.stopPropagation(); if(audio.paused) play(); else pause(); });
+  vol.addEventListener('input', function(){ var x=vol.value/100; audio.volume=x; localStorage.setItem(KEY_VOL, x); });
+  audio.addEventListener('play', reflect);
+  audio.addEventListener('pause', reflect);
+  if(localStorage.getItem(KEY_ON)==='1'){
+    audio.play().then(function(){ reflect(); }).catch(function(){
+      var resume=function(){ if(localStorage.getItem(KEY_ON)==='1' && audio.paused){ audio.play().then(reflect).catch(function(){}); } };
+      document.addEventListener('click', resume, {once:true});
+      document.addEventListener('touchstart', resume, {once:true});
+      reflect();
+    });
+  } else { reflect(); }
+})();
+</script>
+</body>
+</html>

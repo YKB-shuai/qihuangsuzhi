@@ -1,0 +1,294 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>登录 · 岐黄溯智</title>
+  <link rel="stylesheet" href="/lib/bootstrap/bootstrap.min.css">
+  <style>
+    /* ===== 登录页：新中式极简国风 · 胡桃棕木 + 米白（内联，规避缓存） ===== */
+    :root{
+      --green:#6b4a30;     /* 胡桃棕木 */
+      --green-d:#4a3220;
+      --green-l:#8a6a4a;
+      --cream:#f7f1e6;     /* 米奶白 */
+      --gold:#b8894b;      /* 细金线 */
+      --ink:#3a2e22;       /* 深墨字 */
+      --muted:#9a8b7a;     /* 次要灰绿 */
+      --line:#e5dac4;      /* 边框米灰 */
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--cream); font-family: -apple-system,"PingFang SC","Microsoft YaHei",sans-serif; }
+
+    /* 顶栏：互通导航 */
+    .navbar { position: fixed !important; top: 0; left: 0; right: 0; z-index: 1030;
+      background: var(--green) !important; border-bottom: 1px solid var(--green-d) !important; }
+    .navbar-brand { font-weight: 600; letter-spacing: .5px; color: #fff !important; }
+    .navbar-brand:hover { color: #fff !important; }
+    .navbar .nav-btns { display: flex; gap: .4rem; }
+    .navbar .btn-outline-light { color: #fff; border-color: rgba(255,255,255,.5); border-radius: 8px; transition: background .15s; }
+    .navbar .btn-outline-light:hover { background: rgba(255,255,255,.12); color: #fff; }
+
+    .login-split { display: flex; margin-top: 56px; min-height: calc(100vh - 56px); }
+
+    /* ---------- 左半区：品牌叙事 ---------- */
+    .brand-pane {
+      flex: 1 1 50%;
+      position: relative; overflow: hidden;
+      background: linear-gradient(155deg, #3d2718 0%, #6b4a30 55%, #8a6442 100%);
+      color: #fff;
+    }
+    .brand-vertical {
+      position: absolute; top: 28px; left: 28px;
+      writing-mode: vertical-rl; letter-spacing: 6px;
+      font-family: "Songti SC","STSong","SimSun",serif;
+      font-size: .82rem; opacity: .7;
+    }
+    .brand-badge {
+      position: absolute; top: 24px; right: 24px;
+      width: 44px; height: 44px; border: 1px solid var(--gold); border-radius: 6px;
+      display: flex; align-items: center; justify-content: center;
+      font-family: "Songti SC","STSong",serif; font-size: .8rem; color: var(--gold);
+      opacity: .85; letter-spacing: 1px;
+    }
+    .brand-bottom { position: absolute; left: 40px; right: 40px; bottom: 44px; }
+    .brand-title {
+      font-family: "Songti SC","STSong","SimSun",serif;
+      font-size: 38px; font-weight: 400; letter-spacing: 2px; margin: 0 0 .5rem;
+    }
+    .brand-slogan { font-size: 13px; letter-spacing: 1px; opacity: .8; margin: 0 0 1.8rem; }
+    .brand-points { list-style: none; padding: 0; margin: 0; }
+    .brand-points li { position: relative; padding-left: 18px; margin: .55rem 0; font-size: .95rem; opacity: .9; }
+    .brand-points li::before {
+      content: ''; position: absolute; left: 0; top: .55em;
+      width: 6px; height: 6px; border-radius: 50%; background: var(--gold); opacity: .9;
+    }
+
+    /* ---------- 右半区：账号登录 ---------- */
+    .form-pane {
+      flex: 1 1 50%;
+      background: var(--cream);
+      display: flex; align-items: center; justify-content: center;
+      padding: 48px 32px;
+    }
+    .auth-card { width: 100%; max-width: 360px; }
+    .welcome { color: var(--muted); font-size: .9rem; letter-spacing: 2px; margin: 0 0 .3rem; }
+    .auth-title {
+      position: relative; font-size: 28px; font-weight: 500; color: var(--ink);
+      margin: 0 0 1.6rem; letter-spacing: 1px;
+    }
+    .gold-rule { display: block; width: 46px; height: 2px; background: var(--gold); margin-top: 10px; }
+
+    /* 标签切换 */
+    .tabs { display: flex; gap: 10px; }
+    .tab {
+      flex: 1; padding: .6rem; border-radius: 10px; cursor: pointer;
+      font-weight: 600; font-size: .95rem; transition: .15s; border: 1px solid transparent; background: #fff; color: var(--green); border-color: var(--line);
+    }
+    .tab.active { background: var(--accent, #a63d2f); color: #fff; border-color: var(--green); }
+
+    /* 输入框 */
+    .field { position: relative; margin-bottom: 14px; }
+    .field-input {
+      width: 100%; padding: 12px 14px; border: 1px solid var(--line);
+      border-radius: 10px; background: #fff; color: var(--ink); font-size: .95rem;
+      outline: none; transition: border-color .15s;
+    }
+    .field-input::placeholder { color: #a99a82; }
+    .field-input:focus { border-color: var(--green); }
+    .pwd-field .eye, .code-field .code-send { position: absolute; top: 50%; transform: translateY(-50%); }
+    .pwd-field .eye { right: 12px; background: none; border: none; color: var(--muted); cursor: pointer; padding: 4px; }
+    .pwd-field .eye:hover { color: var(--green); }
+    .code-field .field-input { padding-right: 104px; }
+    .code-field .code-send {
+      right: 8px; background: none; border: 1px solid var(--green); color: var(--green);
+      border-radius: 8px; padding: 6px 10px; font-size: .8rem; cursor: pointer;
+    }
+
+    /* 忘记密码 */
+    .forgot-row { text-align: right; margin-bottom: 18px; }
+    .link-forgot { color: var(--muted); font-size: .85rem; text-decoration: none; }
+    .link-forgot:hover { color: var(--green); }
+
+    /* 主按钮 */
+    .btn-primary {
+      width: 100%; display: flex; align-items: center; justify-content: center; gap: 8px;
+      background: var(--accent, #a63d2f); color: #fff; border: none; border-radius: 12px;
+      padding: 13px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: background .15s;
+    }
+    .btn-primary:hover { background: #8f3226; }
+
+    /* 其他登录方式 */
+    .divider { display: flex; align-items: center; gap: 12px; margin: 26px 0 18px; color: var(--muted); font-size: .82rem; }
+    .divider::before, .divider::after { content: ''; flex: 1; height: 1px; background: var(--line); }
+
+    .oauth { display: flex; gap: 12px; }
+    .oauth-btn {
+      flex: 1; display: flex; flex-direction: column; align-items: center; gap: 6px;
+      background: #fff; border: 1px solid var(--line); border-radius: 10px;
+      padding: 12px 6px; color: var(--ink); font-size: .8rem; cursor: pointer; transition: border-color .15s;
+    }
+    .oauth-btn:hover { border-color: var(--green); color: var(--green); }
+
+    /* 注册 */
+    .register-tip { text-align: center; margin: 22px 0 0; color: var(--muted); font-size: .88rem; }
+    .register-tip a { color: var(--green); font-weight: 600; text-decoration: none; }
+    .register-tip a:hover { text-decoration: underline; }
+
+    /* ---------- 响应式：窄屏上下堆叠 ---------- */
+    @media (max-width: 900px) {
+      .login-split { flex-direction: column; }
+      .brand-pane { flex: none; min-height: 240px; }
+      .brand-bottom { position: static; padding: 30px 28px 34px; }
+      .brand-vertical, .brand-badge { display: none; }
+      .form-pane { flex: none; padding: 40px 24px; }
+    }
+
+  </style>
+
+<!-- 品牌版本守卫：检测到旧缓存页自动刷新到新版（一次性，避免死循环） -->
+<script>
+(function(){
+  try {
+    if (sessionStorage.getItem('qh_vguard_ok') === '1') return;
+    var html = document.documentElement.innerHTML || '';
+    if (html.indexOf('东方草木') !== -1 || html.indexOf('ORIENTAL HERBS') !== -1) {
+      sessionStorage.setItem('qh_vguard_ok','1');
+      var u = new URL(location.href);
+      u.searchParams.set('_v', String(Date.now()));
+      location.replace(u.toString());
+    }
+  } catch(e){}
+})();
+</script>
+</head>
+<body>
+
+
+<!-- 顶栏：互通导航 -->
+<nav class="navbar navbar-expand-lg navbar-dark py-2 flex-nowrap">
+  <div class="container-fluid px-3 px-lg-4">
+    <a class="navbar-brand" href="/"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" style="vertical-align:-3px;margin-right:4px"><rect x="1.5" y="1.5" width="21" height="21" rx="4" stroke="#b8894b" stroke-width="1.3"/><text x="12" y="17.5" text-anchor="middle" font-size="14" font-weight="700" font-family="SimSun,serif" fill="#b8894b">岐</text></svg> 岐黄溯智</a>
+  </div>
+</nav>
+
+<div class="login-split">
+  <!-- 左半区：品牌叙事 -->
+  <aside class="brand-pane">
+
+    <!-- 左上竖排国风小字 -->
+    <div class="brand-vertical">岐黄为源 · 悬壶济世</div>
+    <!-- 右上金线徽标 -->
+    <div class="brand-badge">本草</div>
+
+    <!-- 左下产品信息 -->
+    <div class="brand-bottom">
+      <h1 class="brand-title">岐黄溯智</h1>
+      <p class="brand-slogan">QIHUANG WISDOM · 岐黄为源 · 溯智致远</p>
+      <ul class="brand-points">
+        <li>经典方剂与古籍文献溯源</li>
+        <li>道地药材图文解读</li>
+        <li>辨证食疗方案推荐</li>
+        <li>智能问答 · 引用可查</li>
+      </ul>
+    </div>
+  </aside>
+
+  <!-- 右半区：账号登录 -->
+  <main class="form-pane">
+    <div class="auth-card">
+      <p class="welcome">账号访问</p>
+      <h1 class="auth-title">账号登录</h1>
+
+      <!-- 标签切换 -->
+      <div class="tabs mb-4">
+        <button class="tab active" type="button" data-tab="pwd">密码登录</button>
+        <button class="tab" type="button" data-tab="code">验证码登录</button>
+      </div>
+
+      <!-- 密码登录面板 -->
+      <div class="panel panel-pwd">
+        <div id="err" class="alert alert-danger py-2 small d-none"></div>
+        <div class="field">
+          <input id="username" class="field-input" autocomplete="username" placeholder="手机号 / 用户名">
+        </div>
+        <div class="field pwd-field">
+          <input id="password" type="password" class="field-input" autocomplete="current-password" placeholder="密码">
+          <button type="button" class="eye" id="eye" aria-label="显示密码">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/>
+            </svg>
+          </button>
+        </div>
+        <div class="forgot-row">
+          <a href="#" class="link-forgot">忘记密码？</a>
+        </div>
+        <button id="btn" class="btn-primary" type="button">
+          登 录
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </button>
+      </div>
+
+      <!-- 验证码登录面板 -->
+      <div class="panel panel-code d-none">
+        <div class="field">
+          <input class="field-input" placeholder="手机号">
+        </div>
+        <div class="field code-field">
+          <input class="field-input" placeholder="验证码">
+          <button class="code-send" type="button">获取验证码</button>
+        </div>
+        <button class="btn-primary" type="button">
+          登 录
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+        </button>
+      </div>
+
+      <!-- 其他方式 -->
+      <div class="divider"><span>其他方式登录</span></div>
+      <div class="oauth">
+        <button class="oauth-btn" type="button">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><path d="M9 4C5.1 4 2 6.7 2 10c0 1.9 1.1 3.6 2.8 4.7L4 18l3.2-1.6c.7.2 1.4.3 2.1.3h.4A5.7 5.7 0 0 1 9.5 16 5.5 5.5 0 0 1 4 10.5 5.5 5.5 0 0 1 9.5 5 5.5 5.5 0 0 1 15 10.5c0 .4 0 .8-.1 1.1A4.6 4.6 0 0 0 22 15c0-2.5-2.5-4.5-5.5-4.5S12 12.5 12 15s2.5 4.5 5.5 4.5c.6 0 1.2-.1 1.7-.2L20 20l-1.7-2.1A6 6 0 0 1 17.5 18"/></svg>
+          <span>微信登录</span>
+        </button>
+        <button class="oauth-btn" type="button">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2.5" width="10" height="19" rx="2.2"/><line x1="10.5" y1="18.5" x2="13.5" y2="18.5"/></svg>
+          <span>手机号</span>
+        </button>
+        <button class="oauth-btn" type="button">
+          <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4.5 20c0-4 3.6-6.5 7.5-6.5s7.5 2.5 7.5 6.5"/></svg>
+          <span>游客访问</span>
+        </button>
+      </div>
+
+      <!-- 注册跳转 -->
+      <p class="register-tip">还没有账号？<a href="/admin/register.html">立即注册</a></p>
+    </div>
+  </main>
+</div>
+
+<script src="/lib/bootstrap/bootstrap.bundle.min.js"></script>
+<script src="js/login.js"></script>
+<script>
+  // 标签切换：密码登录 / 验证码登录
+  document.querySelectorAll('.tab').forEach(function (t) {
+    t.addEventListener('click', function () {
+      document.querySelectorAll('.tab').forEach(function (x) { x.classList.remove('active'); });
+      t.classList.add('active');
+      var isCode = t.dataset.tab === 'code';
+      document.querySelector('.panel-pwd').classList.toggle('d-none', isCode);
+      document.querySelector('.panel-code').classList.toggle('d-none', !isCode);
+    });
+  });
+  // 眼睛图标：切换密码可见
+  var eye = document.getElementById('eye');
+  var pwd = document.getElementById('password');
+  var eyeOpen = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z"/><circle cx="12" cy="12" r="3"/></svg>';
+  var eyeClosed = '<svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3 3l18 18"/><path d="M10.6 6.2A10.9 10.9 0 0 1 12 6c6.5 0 10 6 10 6a18 18 0 0 1-3.2 3.8M6.5 7.6A18 18 0 0 0 2 12s3.5 7 10 7a10.8 10.8 0 0 0 4.4-.9"/></svg>';
+  eye.addEventListener('click', function () {
+    if (pwd.type === 'password') { pwd.type = 'text'; eye.innerHTML = eyeClosed; }
+    else { pwd.type = 'password'; eye.innerHTML = eyeOpen; }
+  });
+</script>
+</body>
+</html>

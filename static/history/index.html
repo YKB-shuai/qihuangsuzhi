@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>发展历程 · 岐黄溯智</title>
+  <script>
+    if (!localStorage.getItem('tcm_token')) location.href = '/admin/login.html';
+  </script>
+  <style>
+    :root{ --green:#6b4a30; --green-d:#4a3220; --green-l:#8a6a4a; --cream:#f7f1e6; --cream-2:#f0e7d5; --gold:#b8894b; --ink:#3a2e22; --muted:#9a8b7a; --line:#e5dac4; }
+    *{box-sizing:border-box;}
+    html{scroll-behavior:smooth;}
+    body{margin:0;background:var(--cream);color:var(--ink);font-family:-apple-system,"PingFang SC","Microsoft YaHei","Songti SC","STSong",serif;line-height:1.6;}
+    a{text-decoration:none;color:inherit;}
+    .wrap{max-width:1000px;margin:0 auto;padding:0 24px;}
+
+    /* 导航 */
+    .nav{position:fixed;top:0;left:0;right:0;z-index:1030;background:var(--green);border-bottom:1px solid var(--green-d);}
+    .nav-inner{display:flex;align-items:center;gap:28px;height:64px;}
+    .brand{display:flex;align-items:center;gap:10px;color:#fff;}
+    .brand .logo{width:34px;height:34px;border:1.5px solid var(--gold);border-radius:8px;transform:rotate(-4deg);display:flex;align-items:center;justify-content:center;}
+    .brand .name{font-size:1.15rem;font-weight:700;letter-spacing:2px;}
+    .brand .sub{font-size:.58rem;letter-spacing:2px;color:var(--gold);opacity:.85;}
+    .nav-right{margin-left:auto;display:flex;align-items:center;gap:12px;}
+    .btn-gold{background:var(--gold);color:#2a2113;border:none;border-radius:22px;padding:9px 20px;font-weight:700;font-size:.9rem;cursor:pointer;transition:.15s;}
+    .btn-gold:hover{background:#c79a55;}
+    .btn-outline{background:none;color:#fff;border:1px solid rgba(255,255,255,.5);border-radius:22px;padding:8px 18px;font-size:.9rem;cursor:pointer;transition:.15s;}
+    .btn-outline:hover{background:rgba(255,255,255,.12);}
+
+    /* 页头 */
+    .page-head{background:linear-gradient(155deg,#3d2718 0%,#6b4a30 60%,#8a6442 100%);color:#fff;padding:118px 0 56px;}
+    .page-kicker{color:rgba(255,255,255,.65);letter-spacing:4px;font-size:.82rem;}
+    .page-title{font-size:2.6rem;font-weight:700;letter-spacing:4px;margin:8px 0 10px;font-family:"Songti SC","STSong",serif;}
+    .page-desc{color:rgba(255,255,255,.78);max-width:640px;margin:0;}
+
+    /* 时间轴 */
+    section.block{padding:60px 0 80px;}
+    .back{display:inline-flex;align-items:center;gap:6px;color:var(--green);font-size:.9rem;margin-bottom:26px;}
+    .back:hover{color:var(--gold);}
+    .timeline{position:relative;max-width:860px;margin:0 auto;}
+    .timeline::before{content:'';position:absolute;left:154px;top:6px;bottom:6px;width:2px;background:linear-gradient(var(--gold),rgba(184,137,75,.18));}
+    .tl-item{position:relative;padding:0 0 38px 180px;}
+    .tl-item::before{content:'';position:absolute;left:148px;top:4px;width:14px;height:14px;border-radius:50%;background:var(--gold);border:3px solid #fff;box-shadow:0 0 0 2px var(--gold);}
+    .tl-era{position:absolute;left:0;top:0;width:128px;text-align:right;color:var(--gold);font-weight:700;letter-spacing:1px;font-size:.98rem;}
+    .tl-card{background:#fff;border:1px solid var(--line);border-left:3px solid var(--gold);border-radius:14px;padding:18px 22px;transition:.15s;}
+    .tl-card:hover{box-shadow:0 10px 26px rgba(107,74,48,.08);}
+    .tl-title{font-size:1.3rem;color:var(--ink);margin:0 0 8px;font-weight:700;letter-spacing:1px;font-family:"Songti SC","STSong",serif;}
+    .tl-desc{color:var(--muted);margin:0;font-size:.98rem;}
+
+    .empty{text-align:center;color:var(--muted);padding:60px 0;}
+    .footer{background:var(--green-d);color:rgba(255,255,255,.5);padding:40px 0 26px;text-align:center;font-size:.82rem;}
+
+    @media(max-width:640px){
+      .page-title{font-size:2rem;}
+      .timeline::before{left:18px;}
+      .tl-item{padding:0 0 30px 46px;}
+      .tl-item::before{left:12px;}
+      .tl-era{position:static;width:auto;text-align:left;margin-bottom:10px;}
+    }
+
+  </style>
+
+<!-- 品牌版本守卫：检测到旧缓存页自动刷新到新版（一次性，避免死循环） -->
+<script>
+(function(){
+  try {
+    if (sessionStorage.getItem('qh_vguard_ok') === '1') return;
+    var html = document.documentElement.innerHTML || '';
+    if (html.indexOf('东方草木') !== -1 || html.indexOf('ORIENTAL HERBS') !== -1) {
+      sessionStorage.setItem('qh_vguard_ok','1');
+      var u = new URL(location.href);
+      u.searchParams.set('_v', String(Date.now()));
+      location.replace(u.toString());
+    }
+  } catch(e){}
+})();
+</script>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="wrap nav-inner">
+    <a class="brand" href="/">
+      <span class="logo"><svg width="22" height="22" viewBox="0 0 24 24" fill="none"><text x="12" y="17.5" text-anchor="middle" font-size="15" font-weight="700" font-family="&apos;Songti SC&apos;,&apos;STSong&apos;,&apos;SimSun&apos;,serif" fill="#b8894b">岐</text></svg></span>
+      <span><span class="name">岐黄溯智</span><br><span class="sub">QIHUANG WISDOM</span></span>
+    </a>
+    <div class="nav-right">
+      <a class="btn-gold" href="/qa/">进入问答</a>
+      <a class="btn-outline" href="/admin/" id="adminBtn">知识库管理</a>
+    </div>
+  </div>
+</nav>
+
+<header class="page-head">
+  <div class="wrap">
+    <div class="page-kicker">HISTORY</div>
+    <h1 class="page-title">中医药发展历程</h1>
+    <p class="page-desc">从上古尝百草到当代走向世界，一条跨越数千年的传承脉络。</p>
+  </div>
+</header>
+
+<section class="block">
+  <div class="wrap">
+    <a class="back" href="/">← 返回首页</a>
+    <div class="timeline" id="timeline"></div>
+    <div class="empty" id="empty" style="display:none;">该板块内容正在整理中。</div>
+  </div>
+</section>
+
+<footer class="footer">本平台内容仅供中医药文化学习与科普参考，不能替代专业医师的诊断与治疗。</footer>
+
+<script>
+  /* 普通用户隐藏后台入口 */
+  (function(){var t=localStorage.getItem('tcm_token');if(!t)return;fetch('/api/sys/me',{headers:{'X-Token':t}}).then(r=>r.json()).then(d=>{if(d.code===0&&d.data.role===3){var b=document.getElementById('adminBtn');if(b)b.style.display='none';}}).catch(function(){});})();
+
+  fetch('/data/catalog.json').then(r=>r.json()).then(data=>{
+    const items = data.history || [];
+    const tl = document.getElementById('timeline');
+    if (!items.length) { tl.style.display='none'; document.getElementById('empty').style.display='block'; return; }
+    tl.innerHTML = items.map(it=>`
+      <div class="tl-item">
+        <div class="tl-era">${it.era||''}</div>
+        <div class="tl-card">
+          <h3 class="tl-title">${it.title||''}</h3>
+          <p class="tl-desc">${it.desc||''}</p>
+        </div>
+      </div>`).join('');
+  }).catch(()=>{ document.getElementById('timeline').style.display='none'; document.getElementById('empty').style.display='block'; });
+</script>
+<!-- 背景音乐播放器 -->
+<div class="bgm" id="bgm">
+  <div class="bgm-box">
+    <button class="bgm-btn" id="bgmBtn" type="button" aria-label="播放背景音乐">
+      <svg class="ic-play" viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+      <svg class="ic-pause" viewBox="0 0 24 24" width="20" height="20" fill="currentColor"><path d="M6 5h4v14H6zM14 5h4v14h-4z"/></svg>
+    </button>
+    <div class="bgm-info">
+      <div class="bgm-name">古筝 · 高山流水</div>
+      <input class="bgm-vol" id="bgmVol" type="range" min="0" max="100" value="50" aria-label="音量">
+    </div>
+  </div>
+  <audio id="bgmAudio" loop preload="none" src="https://chinesemusicworld.com/mp3lib/Guzheng-High-Mountain-and-Running-River-gao-shan-liu-shui.mp3"></audio>
+</div>
+<style>
+  .bgm{position:fixed;right:18px;bottom:18px;z-index:9999;font-family:inherit;}
+  .bgm-box{display:flex;align-items:center;gap:12px;background:rgba(255,255,255,.92);-webkit-backdrop-filter:blur(6px);backdrop-filter:blur(6px);border:1px solid #e5dac4;border-radius:40px;padding:8px 16px 8px 8px;box-shadow:0 8px 24px rgba(107,74,48,.18);}
+  .bgm-btn{position:relative;width:44px;height:44px;border-radius:50%;border:none;background:linear-gradient(135deg,#6b4a30,#6b4a30);color:#b8894b;display:flex;align-items:center;justify-content:center;cursor:pointer;flex:0 0 auto;transition:transform .2s,box-shadow .2s;}
+  .bgm-btn:hover{transform:scale(1.06);}
+  .bgm-btn.playing{box-shadow:0 0 0 4px rgba(184,137,75,.28);}
+  .bgm-btn .ic-pause{display:none;}
+  .bgm-btn.playing .ic-play{display:none;}
+  .bgm-btn.playing .ic-pause{display:block;}
+  .bgm-info{display:flex;flex-direction:column;gap:5px;min-width:118px;}
+  .bgm-name{font-size:.76rem;color:#6b4a30;font-weight:600;letter-spacing:.5px;white-space:nowrap;}
+  .bgm-vol{-webkit-appearance:none;appearance:none;width:118px;height:4px;border-radius:3px;background:linear-gradient(to right,#b8894b var(--p,50%),#e5dac4 var(--p,50%));outline:none;cursor:pointer;}
+  .bgm-vol::-webkit-slider-thumb{-webkit-appearance:none;appearance:none;width:13px;height:13px;border-radius:50%;background:#b8894b;border:2px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,.2);cursor:pointer;}
+  .bgm-vol::-moz-range-thumb{width:13px;height:13px;border-radius:50%;background:#b8894b;border:2px solid #fff;cursor:pointer;}
+  @media (max-width:520px){ .bgm-info{min-width:90px;} .bgm-vol{width:90px;} .bgm-name{font-size:.7rem;} }
+</style>
+<script>
+(function(){
+  var KEY_VOL='bgm_vol', KEY_ON='bgm_on';
+  var audio=document.getElementById('bgmAudio');
+  var btn=document.getElementById('bgmBtn');
+  var vol=document.getElementById('bgmVol');
+  var v=parseFloat(localStorage.getItem(KEY_VOL));
+  if(isNaN(v)) v=0.5;
+  audio.volume=v; vol.value=Math.round(v*100);
+  vol.style.setProperty('--p', vol.value+'%');
+  function reflect(){ if(audio.paused){ btn.classList.remove('playing'); btn.setAttribute('aria-label','播放背景音乐'); } else { btn.classList.add('playing'); btn.setAttribute('aria-label','暂停背景音乐'); } }
+  function play(){ audio.play().then(function(){ localStorage.setItem(KEY_ON,'1'); reflect(); }).catch(function(){ localStorage.setItem(KEY_ON,'0'); reflect(); }); }
+  function pause(){ audio.pause(); localStorage.setItem(KEY_ON,'0'); reflect(); }
+  btn.addEventListener('click', function(e){ e.stopPropagation(); if(audio.paused) play(); else pause(); });
+  vol.addEventListener('input', function(){ var x=vol.value/100; audio.volume=x; localStorage.setItem(KEY_VOL, x); vol.style.setProperty('--p', vol.value+'%'); });
+  audio.addEventListener('play', reflect);
+  audio.addEventListener('pause', reflect);
+  if(localStorage.getItem(KEY_ON)==='1'){
+    audio.play().then(function(){ reflect(); }).catch(function(){
+      var resume=function(){ if(localStorage.getItem(KEY_ON)==='1' && audio.paused){ audio.play().then(reflect).catch(function(){}); } };
+      document.addEventListener('click', resume, {once:true});
+      document.addEventListener('touchstart', resume, {once:true});
+      reflect();
+    });
+  } else { reflect(); }
+})();
+</script>
+</body>
+</html>
