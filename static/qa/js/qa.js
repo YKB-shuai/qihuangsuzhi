@@ -39,6 +39,10 @@ document.addEventListener('DOMContentLoaded', () => {
             qInput.value = v.input;
             qInput.focus();
             ocrHint.textContent = '识别为「' + v.subject + '」并生成问题，识别可能有误，请核对后提问。';
+          } else if (v.mode === 'query_no_subject' && v.input) {
+            qInput.value = v.input;
+            qInput.focus();
+            ocrHint.textContent = '图中未识别出明确药材，请把问题补充得更具体（如药材名或功效）。';
           } else {
             ocrHint.textContent = '未识别到文字或药材，请换一张清晰的图片试试。';
           }

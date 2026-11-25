@@ -33,15 +33,17 @@ OCR_PROMPT = (
     "如果图片中没有文字，只回答：无文字"
 )
 
-# 双模式理解提示词：一次调用同时拿文字 + 主体识别，返回 JSON
+# 图片理解提示词：一次调用同时拿文字 + 主体识别，返回 JSON
 UNDERSTAND_PROMPT = (
     "分析这张图片，以严格 JSON 格式返回结果，不要输出 JSON 之外的任何内容。\n"
     "字段说明：\n"
     "- text: 图片中的所有文字，按原排版输出；没有文字则为空字符串 \"\"\n"
-    "- subject: 如果图中主体是中药材、中药饮片、方剂或药品，写出它的名称；"
-    "否则写图中主要物体的名称，实在无法判断则为空字符串 \"\"\n"
+    "- subject: 图中主体若是中药材、中药饮片、方剂或药品，写出它的具体名称；"
+    "若为其他物体写物体名称；无法判断则为空字符串 \"\"\n"
     "- kind: 主体类别，只能是 herb（药材/饮片）、formula（方剂/成药）、object（其他物体）、none（无法判断）之一\n"
-    "示例：{\"text\": \"\", \"subject\": \"人参\", \"kind\": \"herb\"}\n"
+    "- text_is_query: 图片文字是否是提问或指示语（如\"这是什么中药\"\"识别图中药材\"\"这是什么药\""
+    "\"帮我看看这是什么\"等），是则 true，普通说明性文字或药材名则为 false\n"
+    "示例：{\"text\": \"这是什么中药\", \"subject\": \"人参\", \"kind\": \"herb\", \"text_is_query\": true}\n"
     "只返回 JSON 对象。"
 )
 
@@ -160,6 +162,7 @@ def understand(data: bytes) -> dict:
     text = str(obj.get("text") or "").strip()
     subject = str(obj.get("subject") or "").strip()
     kind = str(obj.get("kind") or "none").strip().lower()
+    text_is_query = obj.get("text_is_query") is True or str(obj.get("text_is_query", "")).lower() == "true"
     if kind not in ("herb", "formula", "object", "none"):
         kind = "none"
 
@@ -169,18 +172,26 @@ def understand(data: bytes) -> dict:
     if subject in ("无", "none", "null", "无法判断", ""):
         subject = ""
 
-    # 判定优先级：有文字先用文字（信息更可靠）；否则用识别主体
-    if text:
-        return {"mode": "text", "text": text, "subject": subject,
-                "kind": kind, "question": ""}
+    # 判定优先级（用户上传图片的核心意图是"问图里的药材/方剂"）：
+    # 1) 识别出药材/方剂主体 → 生成关于主体的具体问题（即使图上有文字）
+    # 2) 文字是提问/指示语（如"这是什么中药"）→ 文字只是意图提示，不是问题本身，
+    #    若有主体已走 1；无主体则引导用户补充
+    # 3) 普通文字（药材名/说明/方子）→ 直接作为问题
     if subject and kind in ("herb", "formula"):
         q = (
             f"图片中的{subject}是什么？请说明它的性味归经、功效主治和用法。"
             if kind == "herb" else
             f"图片中的{subject}是什么方剂？请说明它的组成、功效主治和用法。"
         )
-        return {"mode": "subject", "text": "", "subject": subject,
+        return {"mode": "subject", "text": text, "subject": subject,
                 "kind": kind, "question": q}
+    if text and not text_is_query:
+        return {"mode": "text", "text": text, "subject": subject,
+                "kind": kind, "question": ""}
+    if text_is_query:
+        # 文字是问句但没识别出明确主体：把问句原样交还，让用户补充描述
+        return {"mode": "query_no_subject", "text": text, "subject": "",
+                "kind": kind, "question": text}
     return {"mode": "none", "text": "", "subject": subject,
             "kind": kind, "question": ""}
 
