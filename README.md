@@ -126,7 +126,7 @@ uv run uvicorn com.tcm.main:app --port 8000 --reload
 前端   原生 HTML/CSS/JS（内联样式防缓存）+ Bootstrap（qa/admin），暖中性宣纸底 + 深胡桃木 + 朱砂点缀的考据风格
 后端   FastAPI（同步路由 + SSE StreamingResponse 流式问答）
 RAG    bge 本地向量模型(CPU) + Chroma 向量检索 + BM25(jieba+术语词典) 关键词检索 → RRF 混合排序
-问答   LangGraph 两节点图（retrieve → generate），DeepSeek 流式生成，带 [n] 引用标注与 0.5 拒答阈值
+问答   意图识别（术语词典快路径 + 规则 + LLM 兜底）→ LangGraph 三节点图（classify → retrieve → generate），DeepSeek 流式生成，带 [n] 引用标注与 0.5 相似度拒答阈值；非中医药问题在检索前直接拦截
 数据   MySQL（knowledge / sys_* / qa_log / oper_log 等）+ Chroma 持久化
 权限   Token + RBAC（sys_user.role_id），后台接口统一守卫
 ```
@@ -186,7 +186,8 @@ uploads/              后台上传的文件
 | 页面样式突然错乱 | 浏览器缓存了旧 HTML/CSS；Ctrl+F5 强刷，页面样式均已内联，刷新即恢复 |
 | 端口被占用 | 换端口：`--port 8001` |
 | 第一条问答很慢 | 启动预热未完成（后台在建索引），等预热日志出现后再试 |
-| 问答拒答"没有找到相关内容" | 相关内容未入库/未向量化：后台审核通过跑 embedding，或用导入脚本补科普内容 |
+| 回答"不在我的范围内" | 意图识别判定为非中医药问题，属正常拦截；如需回答该类问题需扩展 `com/tcm/qa/intent.py` |
+| 问答拒答"没有找到相关内容" | 是中医药问题但知识库无相关内容：后台审核通过跑 embedding，或用导入脚本补科普内容 |
 | 普通用户进后台 403 | 正常，role 3 无后台权限；用 admin 登录 |
 | 向量化慢 | CPU 跑大模型约 3.2 秒/条，增量跑会自动续 |
 | 改代码没生效 | 加 `--reload`，或手动重启服务 |

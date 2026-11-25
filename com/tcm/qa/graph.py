@@ -28,6 +28,7 @@ import torch  # noqa: F401
 
 from com.tcm.cfg.settings import settings
 from com.tcm.db.conn import execute
+from com.tcm.qa import intent
 from com.tcm.rag import retriever
 
 from langchain_core.messages import HumanMessage, SystemMessage
@@ -50,6 +51,7 @@ SYS_PROMPT = (
 
 class QAState(TypedDict):
     question: str
+    intent_ok: bool      # 意图识别：是否为中医药相关问题
     chunks: list
     answer: str
 
@@ -72,13 +74,22 @@ def build_prompt(chunks: list[dict], question: str) -> str:
     return f"资料片段：\n" + "\n".join(lines) + f"\n\n问题：{question}"
 
 
+def node_classify(state: QAState) -> dict:
+    """节点零：意图识别。非中医药问题直接打标，后续节点不再检索/生成。"""
+    return {"intent_ok": intent.is_tcm_question(state["question"])}
+
+
 def node_retrieve(state: QAState) -> dict:
-    """节点一：向量召回。"""
+    """节点一：向量召回。意图不符时跳过检索。"""
+    if not state.get("intent_ok", True):
+        return {"chunks": []}
     return {"chunks": retriever.search(state["question"], TOP_K)}
 
 
 def node_generate(state: QAState) -> dict:
-    """节点二：拼提示词 → DeepSeek 生成带引用回答；资料不足就拒答。"""
+    """节点二：拼提示词 → DeepSeek 生成带引用回答；意图不符或资料不足就拒答。"""
+    if not state.get("intent_ok", True):
+        return {"answer": intent.OUT_OF_SCOPE}
     chunks = state["chunks"]
     if not chunks or max(c["score"] for c in chunks) < MIN_SCORE:
         return {"answer": REFUSE}
@@ -92,9 +103,11 @@ def node_generate(state: QAState) -> dict:
 
 def build_graph():
     g = StateGraph(QAState)
+    g.add_node("classify", node_classify)
     g.add_node("retrieve", node_retrieve)
     g.add_node("generate", node_generate)
-    g.add_edge(START, "retrieve")
+    g.add_edge(START, "classify")
+    g.add_edge("classify", "retrieve")
     g.add_edge("retrieve", "generate")
     g.add_edge("generate", END)
     return g.compile()
@@ -114,7 +127,9 @@ def save_log(question: str, chunks: list[dict], answer: str, elapsed_ms: int) ->
 def ask(question: str) -> dict:
     """非流式：跑一遍图，返回 {question, chunks, answer}。"""
     t0 = time.time()
-    result = build_graph().invoke({"question": question, "chunks": [], "answer": ""})
+    result = build_graph().invoke({
+        "question": question, "intent_ok": True, "chunks": [], "answer": "",
+    })
     save_log(question, result["chunks"], result["answer"], int((time.time() - t0) * 1000))
     return result
 
@@ -126,6 +141,14 @@ def iter_answer(question: str):
     用同步 generator，配合 FastAPI 的 def 路由 + StreamingResponse。
     """
     t0 = time.time()
+
+    # 意图识别前置：非中医药问题不检索、不调生成模型，直接拒答
+    if not intent.is_tcm_question(question):
+        yield ("out_of_scope", intent.OUT_OF_SCOPE)
+        yield ("done", None)
+        save_log(question, [], intent.OUT_OF_SCOPE, int((time.time() - t0) * 1000))
+        return
+
     chunks = retriever.search(question, TOP_K)
     yield ("sources", chunks)
 

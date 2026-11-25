@@ -109,6 +109,12 @@ function handleEvent(evt, answerEl, bubble, onStart) {
     if (!answerEl.parentNode) { bubble.innerHTML = ''; bubble.appendChild(answerEl); if (onStart) onStart(); }
     answerEl.textContent += evt.data;
     chat.scrollTop = chat.scrollHeight;
+  } else if (evt.type === 'out_of_scope') {
+    // 意图识别拒绝：非中医药问题，用提示样式完整显示一次
+    if (!answerEl.parentNode) { bubble.innerHTML = ''; bubble.appendChild(answerEl); if (onStart) onStart(); }
+    bubble.classList.add('notice');
+    answerEl.textContent = evt.data;
+    chat.scrollTop = chat.scrollHeight;
   } else if (evt.type === 'error') {
     if (!answerEl.parentNode) { bubble.innerHTML = ''; bubble.appendChild(answerEl); }
     answerEl.textContent += '\n[出错] ' + evt.data;
