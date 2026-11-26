@@ -162,6 +162,11 @@ async function ask() {
 function handleEvent(evt, answerEl, bubble, onStart) {
   if (evt.type === 'sources') {
     currentSources = evt.data || [];
+  } else if (evt.type === 'rewriting') {
+    // agent loop：检索质量不足，正在改写关键词重试，先给用户一个可见反馈
+    bubble.innerHTML = '<span class="rewriting-hint">未找到理想结果，正在换关键词重试（第 ' +
+      evt.data.attempt + ' 轮）…</span>';
+    chat.scrollTop = chat.scrollHeight;
   } else if (evt.type === 'token') {
     if (!answerEl.parentNode) { bubble.innerHTML = ''; bubble.appendChild(answerEl); if (onStart) onStart(); }
     answerEl.textContent += evt.data;

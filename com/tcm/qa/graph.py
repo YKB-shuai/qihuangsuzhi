@@ -37,8 +37,22 @@ from langgraph.graph import END, START, StateGraph
 from typing import TypedDict
 
 TOP_K = 5
-MIN_SCORE = 0.5   # 最高相似度低于它就拒答，防硬编
+MIN_SCORE = 0.5        # 兼容旧逻辑：生成端最低分门槛（保留原值）
+GOOD_SCORE = 0.62      # 质量判定阈值：实测相关问题 0.79+，无关问题 0.55-，取中间值
+MAX_RETRIES = 2        # agent loop：检索质量不足时最多改写重试 2 轮（共检索 3 次）
 REFUSE = "知识库中没有找到相关内容，无法回答。建议咨询专业医师。"
+
+# 查询改写提示词：把口语化问题压成检索友好的中医关键词
+REWRITE_PROMPT = (
+    "你是中医药知识库的检索词优化助手。\n"
+    "把用户问题改写成适合检索的关键词短语，规则：\n"
+    "1. 只输出检索关键词，不要解释、不要标点、不要引号；\n"
+    "2. 保留核心药材名、方剂名、症状、功效等实体词；\n"
+    "3. 去掉\"请问\"\"是什么\"\"怎么\"等口语词，可适当补充常见的中医同义说法；\n"
+    "4. 控制在 30 字以内。\n"
+    "用户问题：{question}\n"
+    "改写后的检索词："
+)
 
 SYS_PROMPT = (
     "你是「岐黄溯智」中医药知识助手。规则：\n"
@@ -53,6 +67,8 @@ SYS_PROMPT = (
 class QAState(TypedDict):
     question: str
     intent_ok: bool      # 意图识别：是否为中医药相关问题
+    search_query: str    # 当前检索词（改写重试时会更新）
+    retries: int         # 已改写重试次数
     chunks: list
     answer: str
 
@@ -86,16 +102,90 @@ def build_prompt(chunks: list[dict], question: str, image_name: str = "") -> str
     return prefix + "资料片段：\n" + "\n".join(lines) + f"\n\n问题：{question}"
 
 
+def quality_ok(chunks: list[dict]) -> bool:
+    """检索质量判定：只看真实向量相似度，忽略被人为抬高的纯 BM25 分。
+
+    retriever 里纯 bm25 命中的 score 被映射到 0.5~0.8（不代表真实相关性），
+    因此只用 from=vec / from=both 的向量分判断质量，避免无关词误判为命中。
+    """
+    vec_scores = [c["score"] for c in chunks if c.get("from") != "bm25"]
+    return bool(vec_scores) and max(vec_scores) >= GOOD_SCORE
+
+
+def rewrite_query(question: str) -> str:
+    """用 LLM 把问题改写成检索友好的关键词；失败则返回空串。"""
+    try:
+        llm = ChatDeepSeek(
+            api_key=settings.DEEPSEEK_API_KEY,
+            api_base=settings.DEEPSEEK_BASE_URL,
+            model=settings.DEEPSEEK_MODEL_CHAT,
+            temperature=0,
+            max_tokens=60,
+        )
+        resp = llm.invoke([
+            HumanMessage(REWRITE_PROMPT.format(question=question[:200]))
+        ])
+        text = (resp.content or "").strip().strip("\"'：:")
+        # 去掉模型偶尔带的前缀
+        for junk in ("检索词：", "改写后：", "关键词："):
+            if text.startswith(junk):
+                text = text[len(junk):].strip()
+        return text[:60]
+    except Exception:
+        return ""
+
+
+def retrieve_with_retry(question: str, on_retry=None) -> tuple[list[dict], int]:
+    """agent loop：检索 → 质量不足则改写重试，最多 MAX_RETRIES 轮。
+
+    返回 (最终chunks, 实际重试次数)。
+    on_retry: 可选回调 fn(attempt, new_query)，每轮改写后调用（用于流式提示）。
+    """
+    q = question
+    retries = 0
+    chunks = retriever.search(q, TOP_K)
+    while not quality_ok(chunks) and retries < MAX_RETRIES:
+        new_q = rewrite_query(q)
+        if not new_q or new_q == q:   # 改写无效，避免死循环
+            break
+        q = new_q
+        retries += 1
+        if on_retry:
+            on_retry(retries, q)
+        chunks = retriever.search(q, TOP_K)
+    return chunks, retries
+
+
 def node_classify(state: QAState) -> dict:
     """节点零：意图识别。非中医药问题直接打标，后续节点不再检索/生成。"""
     return {"intent_ok": intent.is_tcm_question(state["question"])}
 
 
 def node_retrieve(state: QAState) -> dict:
-    """节点一：向量召回。意图不符时跳过检索。"""
+    """节点一：向量召回。意图不符时跳过检索。用当前检索词（可能被改写过）。"""
     if not state.get("intent_ok", True):
         return {"chunks": []}
-    return {"chunks": retriever.search(state["question"], TOP_K)}
+    return {"chunks": retriever.search(state.get("search_query") or state["question"], TOP_K)}
+
+
+def node_rewrite(state: QAState) -> dict:
+    """节点：检索质量不足时，用 LLM 改写检索词，重试次数 +1。"""
+    new_q = rewrite_query(state.get("search_query") or state["question"])
+    if not new_q or new_q == state.get("search_query"):
+        # 改写无效：保持原查询但把次数用尽，避免死循环
+        return {"retries": MAX_RETRIES}
+    return {"search_query": new_q, "retries": state.get("retries", 0) + 1}
+
+
+def route_after_retrieve(state: QAState) -> str:
+    """条件边：质量达标 → 生成；不达标且还有重试额度 → 改写；否则 → 生成（拒答）。"""
+    if not state.get("intent_ok", True):
+        return "generate"
+    if quality_ok(state.get("chunks", [])):
+        return "generate"
+    if state.get("retries", 0) < MAX_RETRIES:
+        return "rewrite"
+    return "generate"
 
 
 def node_generate(state: QAState) -> dict:
@@ -103,7 +193,7 @@ def node_generate(state: QAState) -> dict:
     if not state.get("intent_ok", True):
         return {"answer": intent.OUT_OF_SCOPE}
     chunks = state["chunks"]
-    if not chunks or max(c["score"] for c in chunks) < MIN_SCORE:
+    if not quality_ok(chunks):
         return {"answer": REFUSE}
 
     resp = build_llm().invoke([
@@ -117,10 +207,12 @@ def build_graph():
     g = StateGraph(QAState)
     g.add_node("classify", node_classify)
     g.add_node("retrieve", node_retrieve)
+    g.add_node("rewrite", node_rewrite)
     g.add_node("generate", node_generate)
     g.add_edge(START, "classify")
     g.add_edge("classify", "retrieve")
-    g.add_edge("retrieve", "generate")
+    g.add_conditional_edges("retrieve", route_after_retrieve, {"rewrite": "rewrite", "generate": "generate"})
+    g.add_edge("rewrite", "retrieve")      # 回路：改写后重新检索
     g.add_edge("generate", END)
     return g.compile()
 
@@ -154,7 +246,8 @@ def ask(question: str, image_b64: str | None = None) -> dict:
         except Exception:
             pass
     result = build_graph().invoke({
-        "question": q, "intent_ok": True, "chunks": [], "answer": "",
+        "question": q, "intent_ok": True, "search_query": q,
+        "retries": 0, "chunks": [], "answer": "",
     })
     save_log(question, result["chunks"], result["answer"], int((time.time() - t0) * 1000))
     return result
@@ -215,10 +308,19 @@ def iter_answer(question: str, image_b64: str | None = None):
         save_log(display_question, [], intent.OUT_OF_SCOPE, int((time.time() - t0) * 1000))
         return
 
-    chunks = retriever.search(search_question, TOP_K)
+    # agent loop：检索 → 质量不足则改写重试（最多 MAX_RETRIES 轮）
+    # 每轮改写通过 rewriting 事件告知前端，避免用户干等
+    def on_retry(attempt, new_query):
+        nonlocal retry_events
+        retry_events.append((attempt, new_query))
+
+    retry_events = []
+    chunks, retries = retrieve_with_retry(search_question, on_retry=on_retry)
+    for attempt, new_query in retry_events:
+        yield ("rewriting", {"attempt": attempt, "query": new_query})
     yield ("sources", chunks)
 
-    if not chunks or max(c["score"] for c in chunks) < MIN_SCORE:
+    if not quality_ok(chunks):
         yield ("token", REFUSE)
         yield ("done", None)
         save_log(display_question, chunks, REFUSE, int((time.time() - t0) * 1000))
